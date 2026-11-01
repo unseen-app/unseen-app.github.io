@@ -24,7 +24,6 @@
       <div class="particles">
         <i class="ambient" style="--x:13%;--y:14%;--dx:48px;--dy:-32px;--delay:-1s;--duration:8s;--size:12px"></i><i class="ambient" style="--x:5%;--y:32%;--dx:75px;--dy:-26px;--delay:-4s;--duration:9s;--size:18px"></i><i class="ambient" style="--x:19%;--y:48%;--dx:50px;--dy:18px;--delay:-2s;--duration:7s;--size:10px"></i><i class="ambient" style="--x:1%;--y:66%;--dx:75px;--dy:35px;--delay:-6s;--duration:10s;--size:13px"></i><i class="ambient" style="--x:17%;--y:82%;--dx:38px;--dy:36px;--delay:-3s;--duration:8s;--size:8px"></i><i class="ambient" style="--x:31%;--y:8%;--dx:32px;--dy:-36px;--delay:-5s;--duration:9s;--size:9px"></i><i class="ambient" style="--x:76%;--y:12%;--dx:38px;--dy:-24px;--delay:-2s;--duration:8s;--size:12px"></i><i class="ambient" style="--x:88%;--y:34%;--dx:26px;--dy:-20px;--delay:-5s;--duration:7s;--size:7px"></i><i class="ambient" style="--x:79%;--y:72%;--dx:45px;--dy:24px;--delay:-1s;--duration:10s;--size:14px"></i><i class="ambient" style="--x:67%;--y:88%;--dx:19px;--dy:26px;--delay:-4s;--duration:8s;--size:8px"></i><i class="ambient" style="--x:25%;--y:28%;--dx:35px;--dy:-30px;--delay:-6s;--duration:9s;--size:6px"></i><i class="ambient" style="--x:13%;--y:57%;--dx:80px;--dy:12px;--delay:-5s;--duration:11s;--size:6px"></i><i class="ambient" style="--x:82%;--y:53%;--dx:37px;--dy:18px;--delay:-3s;--duration:8s;--size:9px"></i><i class="ambient" style="--x:40%;--y:92%;--dx:12px;--dy:32px;--delay:-2s;--duration:9s;--size:10px"></i>
       </div><img class="city-scene ambient" src="hero-city-panorama-v1.png" width="1877" height="838" alt=""></div>
-    <button class="motion-control" type="button" aria-pressed="false" aria-label="Остановить анимацию"><span class="motion-symbol" aria-hidden="true">Ⅱ</span><span class="motion-label">Пауза</span></button>
   </section>
 
   <section class="downloads wrap section" id="downloads" aria-labelledby="download-title">
@@ -51,15 +50,5 @@
   <section class="questions wrap section" aria-labelledby="faq-title"><div class="help-intro"><h2 id="faq-title">Есть вопросы?</h2><p>Мы ещё в бете. Если что-то не работает — напиши нам. Укажи устройство, версию Unseen и тип сети.</p><a class="text-link" href="https://www.instagram.com/artemseeyou/" target="_blank" rel="noopener noreferrer">Написать разработчику <span aria-hidden="true">↗</span></a></div><div class="faq"><details><summary>Это правда бесплатно?<span aria-hidden="true">+</span></summary><p>Да. В Unseen нет регистрации и платной подписки. Добровольная поддержка не открывает дополнительных функций.</p></details><details><summary>Почему Android запрашивает VPN?<span aria-hidden="true">+</span></summary><p>Unseen использует системный VPN-интерфейс Android для обработки подключений. Разрешение нужно при первом включении защиты.</p></details><details><summary>Что умеет версия для ТВ?<span aria-hidden="true">+</span></summary><p>Это совсем ранняя версия, сейчас ориентированная на YouTube. Другие приложения не включены. Совместимость зависит от модели телевизора, а фоновый запуск настраивается отдельно.</p></details><details><summary>Можно ли сменить страну?<span aria-hidden="true">+</span></summary><p>Смена страны не является функцией Unseen. Доступность сервисов зависит от сети, сервера и доступных способов обхода.</p></details></div></section>
 </main>
 <footer class="footer wrap"><div><a href="#top" aria-label="В начало"><img src="wordmark.svg" width="166" height="40" alt="Unseen"></a><p>Пусть близкие будут ближе.</p></div><a href="https://github.com/unseen-app/unseen-app.github.io" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a></footer>
-<script>
-const motionButton = document.querySelector('.motion-control');
-motionButton.addEventListener('click', () => {
-  const paused = document.querySelector('.hero').classList.toggle('motion-paused');
-  motionButton.setAttribute('aria-pressed', String(paused));
-  motionButton.setAttribute('aria-label', paused ? 'Продолжить анимацию' : 'Остановить анимацию');
-  motionButton.querySelector('.motion-label').textContent = paused ? 'Продолжить' : 'Пауза';
-  motionButton.querySelector('.motion-symbol').textContent = paused ? '▷' : 'Ⅱ';
-});
-</script>
 </body>
 </html>
