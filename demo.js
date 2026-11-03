@@ -1,11 +1,9 @@
-const form = document.querySelector("#route-form");
-const field = document.querySelector("#route-url");
+const buttons = [...document.querySelectorAll(".demo-choices button")];
 const state = document.querySelector("#route-state");
 const screen = document.querySelector("#route-screen");
 const elapsed = document.querySelector("#route-time");
 const address = document.querySelector("#route-address");
 const captured = document.querySelector("#route-captured");
-const button = form.querySelector("button");
 const sites = new Set(["web.telegram.org", "youtube.com"]);
 function show(icon, title, description) {
   const symbol = document.createElement("span");
@@ -19,31 +17,12 @@ function show(icon, title, description) {
   screen.classList.remove("has-preview");
   screen.replaceChildren(symbol, heading, caption);
 }
-async function simulate() {
-  if (button.disabled) return;
-  let host;
-  try {
-    const value = field.value.trim();
-    const url = new URL(value.includes("://") ? value : "https://" + value);
-    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw Error();
-    host = url.hostname.replace(/^www\./, "");
-  } catch {
-    state.textContent = "Проверь адрес";
-    state.dataset.status = "error";
-    elapsed.textContent = "";
-    show("!", "Адрес не распознан", "Введи, например, web.telegram.org");
-    return;
-  }
+async function openPreview(host) {
+  if (!sites.has(host) || buttons.some(button => button.disabled)) return;
   address.textContent = host;
   captured.textContent = "Просмотр через Unseen";
   elapsed.textContent = "";
-  if (!sites.has(host)) {
-    state.textContent = "Адрес вне списка демонстрации";
-    state.dataset.status = "error";
-    show("!", "Выбери сайт для проверки", "Сейчас доступны Telegram Web и YouTube");
-    return;
-  }
-  button.disabled = true;
+  buttons.forEach(button => { button.disabled = true; });
   state.dataset.status = "pending";
   state.textContent = "Открываем через Unseen";
   show("…", "Загружаем страницу", "Обычно это занимает несколько секунд");
@@ -74,12 +53,9 @@ async function simulate() {
     state.textContent = "Не удалось загрузить";
     show("!", "Страница пока не открылась", error.message);
   } finally {
-    button.disabled = false;
+    buttons.forEach(button => { button.disabled = false; });
   }
 }
-form.addEventListener("submit", event => { event.preventDefault(); void simulate(); });
-document.querySelectorAll("[data-host]").forEach(item => item.addEventListener("click", () => {
-  if (button.disabled) return;
-  field.value = item.dataset.host;
-  void simulate();
-}));
+buttons.forEach(button => {
+  button.addEventListener("click", () => { void openPreview(button.dataset.host); });
+});
