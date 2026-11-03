@@ -1,7 +1,7 @@
 {
-  "version": "3.6.6",
-  "url": "https://github.com/ravin3657345-gif/unseen/releases/download/downloads-2026-11-01/Unseen-Windows-3.6.6.zip",
-  "size": 60064770,
-  "sha256": "9feb621199d43e0221abcd566f901d9f3c25f410fc6142e5607e88a8543ec80f",
-  "notes": "Повышена стабильность подключения Telegram Desktop. Улучшен выбор релейного маршрута."
+  "version": "3.6.7",
+  "url": "https://github.com/ravin3657345-gif/unseen/releases/download/downloads-2026-11-01/Unseen-Windows-3.6.7.zip",
+  "size": 60074656,
+  "sha256": "0bf2ff30df890d2705809ecd8998c9b30f4170b3f2ae552e475005e7ac9fe3ba",
+  "notes": "Добавлена проверка обновлений из приложения."
 }
