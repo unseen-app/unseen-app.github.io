@@ -10,6 +10,8 @@
   <link rel="preload" href="golos-text.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="styles.css?v=5">
   <script defer src="https://cloud.umami.is/script.js" data-website-id="444cec39-32c9-467d-bd17-d0946e998798" data-domains="unseen-app.github.io" data-exclude-hash="true"></script>
+  <link rel="stylesheet" href="demo.css?v=1">
+  <script defer src="demo.js?v=1"></script>
 </head>
 <body>
 <a class="skip" href="#downloads">Перейти к скачиванию</a>
@@ -27,6 +29,29 @@
         <i class="ambient" style="--x:13%;--y:14%;--dx:48px;--dy:-32px;--delay:-1s;--duration:8s;--size:12px"></i><i class="ambient" style="--x:5%;--y:32%;--dx:75px;--dy:-26px;--delay:-4s;--duration:9s;--size:18px"></i><i class="ambient" style="--x:19%;--y:48%;--dx:50px;--dy:18px;--delay:-2s;--duration:7s;--size:10px"></i><i class="ambient" style="--x:1%;--y:66%;--dx:75px;--dy:35px;--delay:-6s;--duration:10s;--size:13px"></i><i class="ambient" style="--x:17%;--y:82%;--dx:38px;--dy:36px;--delay:-3s;--duration:8s;--size:8px"></i><i class="ambient" style="--x:31%;--y:8%;--dx:32px;--dy:-36px;--delay:-5s;--duration:9s;--size:9px"></i><i class="ambient" style="--x:76%;--y:12%;--dx:38px;--dy:-24px;--delay:-2s;--duration:8s;--size:12px"></i><i class="ambient" style="--x:88%;--y:34%;--dx:26px;--dy:-20px;--delay:-5s;--duration:7s;--size:7px"></i><i class="ambient" style="--x:79%;--y:72%;--dx:45px;--dy:24px;--delay:-1s;--duration:10s;--size:14px"></i><i class="ambient" style="--x:67%;--y:88%;--dx:19px;--dy:26px;--delay:-4s;--duration:8s;--size:8px"></i><i class="ambient" style="--x:25%;--y:28%;--dx:35px;--dy:-30px;--delay:-6s;--duration:9s;--size:6px"></i><i class="ambient" style="--x:13%;--y:57%;--dx:80px;--dy:12px;--delay:-5s;--duration:11s;--size:6px"></i><i class="ambient" style="--x:82%;--y:53%;--dx:37px;--dy:18px;--delay:-3s;--duration:8s;--size:9px"></i><i class="ambient" style="--x:40%;--y:92%;--dx:12px;--dy:32px;--delay:-2s;--duration:9s;--size:10px"></i>
       </div><picture><source media="(max-width: 650px)" srcset="hero-city-mobile-v1.png" width="1086" height="1448"><img class="city-scene ambient" src="hero-city-panorama-v4.png" width="1877" height="838" alt="" fetchpriority="high"></picture></div>
   </section>
+
+<section class="relay-demo wrap" id="try-unseen" aria-labelledby="try-title">
+  <div class="demo-copy">
+    <span class="demo-kicker"><i></i> Пробный запуск</span>
+    <h2 id="try-title">Сайт не открывается?</h2>
+    <p>Посмотри, как Unseen открывает страницу через защищённое подключение.</p>
+    <form id="route-form">
+      <label for="route-url" class="sr-only">Адрес сайта</label>
+      <input type="text" id="route-url" value="web.telegram.org" placeholder="Например, web.telegram.org" inputmode="url" spellcheck="false" maxlength="253" required>
+      <button type="submit" class="demo-submit">Открыть через Unseen <span aria-hidden="true">↗</span></button>
+    </form>
+    <div class="demo-examples"><span>Для примера</span><button type="button" data-host="web.telegram.org">Telegram Web</button><button type="button" data-host="youtube.com">YouTube</button></div>
+    <p class="demo-notice">Unseen получает страницу, тестовый браузер загружает её ресурсы и делает снимок. В окне доступен только просмотр.</p>
+  </div>
+  <div class="demo-browser" aria-label="Окно просмотра">
+    <div class="demo-chrome"><span class="demo-lights" aria-hidden="true">● ● ●</span><span id="route-address">web.telegram.org</span><span class="demo-brand">UNSEEN</span></div>
+    <div class="demo-route" aria-live="polite"><span class="route-indicator" id="route-state">Готово к проверке</span><span id="route-time"></span></div>
+    <div class="demo-screen" id="route-screen" aria-live="polite">
+      <span class="demo-symbol" aria-hidden="true">↗</span><strong>Здесь откроется страница</strong><span>Нажми «Открыть через Unseen»</span>
+    </div>
+    <div class="demo-foot"><span id="route-captured">Просмотр через Unseen</span><a href="#downloads">Скачать и открыть у себя ↓</a></div>
+  </div>
+</section>
 
   <section class="downloads wrap section" id="downloads" aria-labelledby="download-title">
     <div class="section-heading"><h2 id="download-title">На твоём устройстве.</h2><p>Выбирай, где удобнее.<br>Файлы скачиваются напрямую с GitHub.</p></div>
