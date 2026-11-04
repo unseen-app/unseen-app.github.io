@@ -185,6 +185,8 @@
     $('original-label').hidden = !state.original;
     $('instruction').textContent = state.cropping ? 'Для возврата к маскам нажми «Закрыть» или «Пиксели».' : state.original ? 'Сохранится обработанная версия. Нажми «К обработке», чтобы продолжить.' : 'Проведи пальцем или мышью, чтобы выделить область';
     fitCanvas();
+    window.UnseenTelegram?.sync();
+    window.UnseenTelegram?.ready();
   }
 
   function requestRender() { if (!frame) frame = requestAnimationFrame(render); }
@@ -532,6 +534,7 @@
     if ($('resize').value === 'custom' && !$('long-edge').checkValidity()) { $('long-edge').reportValidity(); return; }
     finishCropForEditing();
     state.busy = true; $('save').disabled = true;
+    window.UnseenTelegram?.sync();
     status('Сохраняем обработанную картинку…');
     try {
       compose();
@@ -559,6 +562,7 @@
       $('share').hidden = !(navigator.canShare && navigator.canShare({ files: [file] }));
       download();
       if (!$('saved-dialog').open) $('saved-dialog').showModal();
+      window.UnseenTelegram?.sync();
       const weight = blob.size >= 1048576 ? `${(blob.size / 1048576).toFixed(1)} МБ` : `${Math.max(1, Math.round(blob.size / 1024))} КБ`;
       status(`Готово · ${size.w} × ${size.h} · ${type === 'image/png' ? 'PNG' : 'JPEG'} · ${weight} · без исходных EXIF. Проверь результат перед отправкой.`);
     } catch { status('Браузеру не удалось сохранить картинку. Попробуй PNG или изображение меньшего размера.', true); }
