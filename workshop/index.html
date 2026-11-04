@@ -9,13 +9,13 @@
   <title>Мастерская приватности · Unseen</title>
   <meta name="description" content="Прикрой личное на фото и скриншотах. Обработка на твоём устройстве, без отправки изображений на сервер.">
   <link rel="icon" href="../icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="workshop.css?v=2">
-  <script src="workshop.js?v=2" defer></script>
+  <link rel="stylesheet" href="workshop.css?v=3">
+  <script src="workshop.js?v=3" defer></script>
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="../" aria-label="На сайт Unseen"><img src="../wordmark.svg" width="166" height="40" alt="Unseen"></a>
-    <span class="lab-tag"><span></span>Мастерская <small>0.2 / бета</small></span>
+    <span class="lab-tag"><span></span>Мастерская <small>0.3 / бета</small></span>
     <a class="feedback" href="https://www.instagram.com/unseen.connect/" target="_blank" rel="noopener noreferrer">Обратная связь <span aria-hidden="true">↗</span></a>
   </header>
 
@@ -55,7 +55,7 @@
         <section class="control-group export-settings">
           <h2>Готовая картинка</h2>
           <label class="field-label" for="crop">Кадр</label><select id="crop"><option value="full">Как в оригинале</option><option value="avatar">Квадрат для аватара · по центру</option><option value="custom">Свободная обрезка</option></select>
-          <div class="transform-actions"><button id="crop-edit" type="button">✂ Обрезать</button><button id="rotate-left" type="button" aria-label="Повернуть на 90 градусов влево">↶ 90°</button><button id="rotate-right" type="button" aria-label="Повернуть на 90 градусов вправо">↷ 90°</button></div>
+          <div class="transform-actions"><button id="crop-edit" type="button">✂ Выбрать кадр</button><button id="crop-cancel-side" type="button" hidden>Отмена</button><button id="rotate-left" type="button" aria-label="Повернуть на 90 градусов влево">↶ 90°</button><button id="rotate-right" type="button" aria-label="Повернуть на 90 градусов вправо">↷ 90°</button></div>
           <label class="field-label" for="resize">Размер для отправки</label><select id="resize"><option value="original">Без уменьшения</option><option value="2048">До 2048 px · большое фото</option><option value="1280">До 1280 px · для переписки</option><option value="800">До 800 px · компактно</option><option value="custom">Свой размер</option></select>
           <div id="custom-size-options" hidden><label class="field-label" for="long-edge">Длинная сторона, px</label><input id="long-edge" type="number" min="64" max="4096" step="1" value="1200" inputmode="numeric"></div>
           <label class="field-label" for="format">Формат</label><select id="format"><option value="image/png">PNG · чёткий текст</option><option value="image/jpeg">JPEG · компактное фото</option></select>
@@ -68,8 +68,8 @@
 
       <section class="workspace" aria-label="Изображение">
         <div class="workspace-toolbar"><div class="file-info"><span class="file-dot" aria-hidden="true"></span><span id="filename">Пример</span><small id="dimensions">Загрузка…</small></div><button class="compare" id="compare" type="button" aria-pressed="false">Сравнить</button></div>
-        <div class="crop-toolbar" id="crop-toolbar" hidden><span>Выдели фрагмент на фото</span><button id="crop-cancel" type="button">Отмена</button><button id="crop-apply" type="button">Применить обрезку</button></div>
         <div class="stage" id="stage"><canvas id="canvas" width="1440" height="1000" tabindex="0" aria-label="Изображение для обработки. Выдели область мышью или пальцем. Стрелки перемещают выбранную маску, Shift и стрелки меняют размер."></canvas><div class="original-label" id="original-label" hidden>Оригинал · только просмотр</div><div class="drop-message" id="drop-message" hidden>Отпусти фото здесь</div></div>
+        <div class="crop-toolbar" id="crop-toolbar" hidden><span id="crop-guide">Выдели фрагмент на фото</span><button id="crop-redraw" type="button">Выделить заново</button><button id="crop-cancel" type="button">Отмена</button><button id="crop-apply" type="button">Обрезать</button></div>
         <div class="workspace-bottom"><p id="instruction">Проведи пальцем или мышью, чтобы выделить область</p><div class="edit-actions"><button id="undo" type="button" disabled aria-label="Отменить последнее действие">↶ <span>Отменить</span></button><button id="remove" type="button" disabled>Удалить область</button><button id="clear" type="button" disabled>Сбросить</button></div></div>
         <div class="selection-row"><span id="region-count">Областей: 0</span><button id="add-region" type="button">＋ Добавить по центру</button><small>Область можно двигать и менять за угол</small></div>
       </section>

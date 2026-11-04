@@ -16,6 +16,7 @@
   let savedName = '';
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const selected = () => state.regions.find(region => region.id === state.selected);
+  const validCrop = () => state.cropDraft && state.cropDraft.w >= 4 && state.cropDraft.h >= 4;
   const snapshot = () => JSON.stringify({ regions: state.regions, turns: state.turns, cropMode: state.cropMode, cropRect: state.cropRect });
   const status = (text, error = false) => { $('status').textContent = text; $('status').classList.toggle('error', error); };
 
@@ -166,27 +167,34 @@
     $('dimensions').textContent = `${size.w} × ${size.h}` + (output.w !== size.w || output.h !== size.h ? ` → ${output.w} × ${output.h}` : '');
     $('filename').textContent = state.name;
     $('region-count').textContent = `Областей: ${state.regions.length}`;
-    $('selection-state').textContent = r ? `Область ${state.regions.indexOf(r) + 1}` : 'Новая область';
-    $('undo').disabled = !state.history.length || state.busy;
-    $('clear').disabled = !state.regions.length || state.busy;
+    $('selection-state').textContent = state.cropping ? 'Режим обрезки' : r ? `Область ${state.regions.indexOf(r) + 1}` : 'Новая область';
+    $('undo').disabled = (!state.history.length && !state.cropping) || state.busy;
+    $('clear').disabled = (!state.regions.length && !state.cropping) || state.busy;
+    $('clear').textContent = state.cropping ? 'Отменить обрезку' : 'Сбросить маски';
     $('remove').disabled = !selected() || state.busy || state.cropping;
-    $('save').disabled = state.busy || state.cropping;
+    $('save').disabled = state.busy;
+    $('save').firstChild.textContent = state.cropping && validCrop() ? 'Обрезать и сохранить ' : 'Сохранить картинку ';
     $('crop-toolbar').hidden = !state.cropping;
-    $('crop-apply').disabled = !state.cropDraft || state.cropDraft.w < 4 || state.cropDraft.h < 4;
+    $('crop-apply').disabled = !validCrop();
+    $('crop-edit').textContent = state.cropping ? '✓ Обрезать' : '✂ Выбрать кадр';
+    $('crop-cancel-side').hidden = !state.cropping;
+    $('crop-redraw').disabled = !state.cropDraft;
+    $('crop-guide').textContent = validCrop() ? 'Кадр выбран. Нажми «Обрезать» или «Сохранить».' : 'Выдели фрагмент на фото';
     $('compare').setAttribute('aria-pressed', String(state.original));
     $('compare').textContent = state.original ? 'К обработке' : 'Сравнить';
     $('original-label').hidden = !state.original;
-    $('instruction').textContent = state.cropping ? 'Выдели нужный фрагмент и нажми «Применить обрезку»' : state.original ? 'Сохранится обработанная версия. Нажми «К обработке», чтобы продолжить.' : 'Проведи пальцем или мышью, чтобы выделить область';
+    $('instruction').textContent = state.cropping ? 'Для возврата к маскам нажми «Закрыть» или «Пиксели».' : state.original ? 'Сохранится обработанная версия. Нажми «К обработке», чтобы продолжить.' : 'Проведи пальцем или мышью, чтобы выделить область';
     fitCanvas();
   }
 
   function requestRender() { if (!frame) frame = requestAnimationFrame(render); }
+  function showCanvas() { requestAnimationFrame(() => canvas.scrollIntoView({ block: 'center', behavior: 'instant' })); }
 
   function syncTools() {
     const r = selected();
     if (r) { state.tool = r.type; state.color = r.color; state.size = r.size; state.soft = r.soft; }
     document.querySelectorAll('[data-tool]').forEach(button => {
-      const active = button.dataset.tool === state.tool;
+      const active = !state.cropping && button.dataset.tool === state.tool;
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', String(active));
     });
@@ -369,9 +377,11 @@
   }
   canvas.addEventListener('pointerup', event => finishPointer(event));
   canvas.addEventListener('pointercancel', event => finishPointer(event, true));
+  canvas.addEventListener('lostpointercapture', event => finishPointer(event, true));
 
   function addRegion() {
-    if (!state.ready || state.busy || state.cropping || state.regions.length >= 50) return;
+    if (!state.ready || state.busy || state.regions.length >= 50) return;
+    finishCropForEditing();
     remember();
     const area = view();
     const r = newRegion(area.x + area.w * .3, area.y + area.h * .4, area.w * .4, area.h * .2);
@@ -384,7 +394,9 @@
   $('add-region').addEventListener('click', addRegion);
 
   function undo() {
-    if (!state.history.length || state.busy) return;
+    if (state.busy) return;
+    if (state.cropping) { cancelCrop(); return; }
+    if (!state.history.length) return;
     restore(state.history.pop());
     state.selected = null;
     state.original = false;
@@ -396,38 +408,51 @@
     if (!selected()) return;
     remember(); state.regions = state.regions.filter(r => r.id !== state.selected); state.selected = null; syncTools(); requestRender();
   });
-  $('clear').addEventListener('click', () => { remember(); state.regions = []; state.selected = null; state.original = false; syncTools(); requestRender(); });
-  $('compare').addEventListener('click', () => { if (!state.cropping) { state.original = !state.original; requestRender(); } });
+  $('clear').addEventListener('click', () => { if (state.cropping) { cancelCrop(); return; } remember(); state.regions = []; state.selected = null; state.original = false; syncTools(); requestRender(); });
+  $('compare').addEventListener('click', () => { finishCropForEditing(); state.original = !state.original; requestRender(); });
 
   function startCrop() {
     if (!state.ready || state.busy) return;
+    if (state.cropping) return;
     state.original = false;
     state.cropping = true;
     state.cropDraft = state.cropMode === 'custom' && state.cropRect ? { ...state.cropRect } : null;
     state.selected = null;
     $('crop').value = 'custom';
+    syncTools();
     requestRender();
-    canvas.scrollIntoView({ block: 'center', behavior: 'instant' });
+    status('Выдели кадр и нажми «Обрезать». Можно сразу нажать «Сохранить» или перейти к маскам.');
+    showCanvas();
   }
   function cancelCrop() {
-    state.cropping = false; state.cropDraft = null; $('crop').value = state.cropMode; requestRender();
+    state.cropping = false; state.cropDraft = null; $('crop').value = state.cropMode; syncTools(); requestRender();
+    status('Обрезка отменена. Можно скрывать фрагменты или сохранить изображение.');
+    showCanvas();
   }
   function applyCrop() {
-    if (!state.cropDraft || state.cropDraft.w < 4 || state.cropDraft.h < 4) return;
+    if (!validCrop()) { status('Сначала выдели кадр на изображении. Для выхода нажми «Отмена» или выбери инструмент скрытия.', true); return false; }
     remember();
     const r = state.cropDraft;
     const x = Math.floor(r.x), y = Math.floor(r.y);
     state.cropRect = { x, y, w: Math.min(source.width - x, Math.ceil(r.x + r.w) - x), h: Math.min(source.height - y, Math.ceil(r.y + r.h) - y) };
     state.cropMode = 'custom'; state.cropping = false; state.cropDraft = null;
-    $('crop').value = 'custom'; requestRender();
-    status('Кадр обрезан. Маски сохранены. Поворот и обрезку можно отменить.');
+    $('crop').value = 'custom'; syncTools(); requestRender();
+    status('Кадр обрезан. Теперь можно скрыть фрагменты или сохранить изображение.');
+    showCanvas();
+    return true;
   }
-  $('crop-edit').addEventListener('click', startCrop);
+  function finishCropForEditing() {
+    if (!state.cropping) return;
+    if (validCrop()) applyCrop(); else cancelCrop();
+  }
+  $('crop-edit').addEventListener('click', () => { if (state.cropping) applyCrop(); else startCrop(); });
   $('crop-cancel').addEventListener('click', cancelCrop);
+  $('crop-cancel-side').addEventListener('click', cancelCrop);
   $('crop-apply').addEventListener('click', applyCrop);
+  $('crop-redraw').addEventListener('click', () => { state.cropDraft = null; requestRender(); });
   $('crop').addEventListener('change', () => {
     if ($('crop').value === 'custom') { startCrop(); return; }
-    remember(); state.cropMode = $('crop').value; state.cropping = false; state.cropDraft = null; state.original = false; requestRender();
+    remember(); state.cropMode = $('crop').value; state.cropping = false; state.cropDraft = null; state.original = false; syncTools(); requestRender();
   });
   function turn(delta) {
     if (!state.ready || state.busy) return;
@@ -446,6 +471,7 @@
   const today = new Date();
   $('watermark-date').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   document.querySelectorAll('[data-tool]').forEach(button => button.addEventListener('click', () => {
+    finishCropForEditing();
     state.tool = button.dataset.tool;
     const r = selected(); if (r && r.type !== state.tool) { remember(); r.type = state.tool; }
     syncTools(); requestRender();
@@ -501,9 +527,10 @@
   }
 
   $('save').addEventListener('click', async () => {
-    if (!state.ready || state.busy || drag || state.cropping) return;
+    if (!state.ready || state.busy || drag) return;
     if ($('watermark').checked && !$('watermark-text').value.trim()) { status('Введи подпись для водяного знака или отключи его.', true); $('watermark-text').focus(); return; }
     if ($('resize').value === 'custom' && !$('long-edge').checkValidity()) { $('long-edge').reportValidity(); return; }
+    finishCropForEditing();
     state.busy = true; $('save').disabled = true;
     status('Сохраняем обработанную картинку…');
     try {
