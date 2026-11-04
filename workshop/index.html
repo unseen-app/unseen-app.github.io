@@ -9,15 +9,13 @@
   <title>Мастерская приватности · Unseen</title>
   <meta name="description" content="Прикрой личное на фото и скриншотах. Обработка на твоём устройстве, без отправки изображений на сервер.">
   <link rel="icon" href="../icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="workshop.css?v=5">
-  <script src="vendor/telegram-web-app.js?v=20261104" defer></script>
-  <script src="telegram.js?v=5" defer></script>
-  <script src="workshop.js?v=5" type="module"></script>
+  <link rel="stylesheet" href="workshop.css?v=6">
+  <script src="workshop.js?v=6" type="module"></script>
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="../" aria-label="На сайт Unseen"><img src="../wordmark.svg" width="166" height="40" alt="Unseen"></a>
-    <span class="lab-tag"><span></span>Мастерская <small>0.5 / бета</small></span>
+    <span class="lab-tag"><span></span>Мастерская <small>0.5.1 / бета</small></span>
     <a class="feedback" href="https://www.instagram.com/unseen.connect/" target="_blank" rel="noopener noreferrer">Обратная связь <span aria-hidden="true">↗</span></a>
   </header>
 
@@ -57,6 +55,7 @@
 
         <section class="control-group export-settings">
           <h2>Готовая картинка</h2>
+          <div class="metadata-info"><h3>Удаление метаданных <span>✓ Включено</span></h3><p>При сохранении создаём новую копию без исходных EXIF, GPS, имени автора и комментариев. Работает для PNG, JPEG и PDF.</p></div>
           <label class="field-label" for="crop">Кадр</label><select id="crop"><option value="full">Как в оригинале</option><option value="avatar">Квадрат для аватара · по центру</option><option value="custom">Свободная обрезка</option></select>
           <div class="transform-actions"><button id="crop-edit" type="button">✂ Выбрать кадр</button><button id="crop-cancel-side" type="button" hidden>Отмена</button><button id="rotate-left" type="button" aria-label="Повернуть на 90 градусов влево">↶ 90°</button><button id="rotate-right" type="button" aria-label="Повернуть на 90 градусов вправо">↷ 90°</button></div>
           <label class="field-label" for="resize">Размер для отправки</label><select id="resize"><option value="original">Без уменьшения</option><option value="2048">До 2048 px · большое фото</option><option value="1280">До 1280 px · для переписки</option><option value="800">До 800 px · компактно</option><option value="custom">Свой размер</option></select>
