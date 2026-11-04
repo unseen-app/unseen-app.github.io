@@ -7,7 +7,7 @@
   const source = document.createElement('canvas');
   const scene = document.createElement('canvas');
   const tile = document.createElement('canvas');
-  const state = { regions: [], selected: null, history: [], tool: 'solid', color: '#252525', size: 24, soft: false, original: false, ready: false, busy: false, name: 'Пример', serial: 0 };
+  const state = { regions: [], selected: null, history: [], tool: 'solid', color: '#252525', size: 24, soft: false, original: false, ready: false, busy: false, name: 'Пример', serial: 0, turns: 0, cropMode: 'full', cropRect: null, cropping: false, cropDraft: null };
   let drag = null;
   let frame = 0;
   let loadVersion = 0;
@@ -16,8 +16,15 @@
   let savedName = '';
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const selected = () => state.regions.find(region => region.id === state.selected);
-  const snapshot = () => JSON.stringify(state.regions);
+  const snapshot = () => JSON.stringify({ regions: state.regions, turns: state.turns, cropMode: state.cropMode, cropRect: state.cropRect });
   const status = (text, error = false) => { $('status').textContent = text; $('status').classList.toggle('error', error); };
+
+  function restore(previous) {
+    Object.assign(state, JSON.parse(previous));
+    state.cropping = false;
+    state.cropDraft = null;
+    $('crop').value = state.cropMode;
+  }
 
   function remember(previous = snapshot()) {
     state.history.push(previous);
@@ -25,11 +32,64 @@
   }
 
   function view() {
-    if ($('crop').value === 'avatar') {
+    if (!state.cropping && state.cropMode === 'custom' && state.cropRect) return { ...state.cropRect };
+    if (!state.cropping && state.cropMode === 'avatar') {
       const side = Math.min(source.width, source.height);
       return { x: Math.floor((source.width - side) / 2), y: Math.floor((source.height - side) / 2), w: side, h: side };
     }
     return { x: 0, y: 0, w: source.width, h: source.height };
+  }
+
+  function oriented(area = view()) {
+    return state.turns % 2 ? { w: area.h, h: area.w } : { w: area.w, h: area.h };
+  }
+
+  function outputSize() {
+    const size = oriented();
+    const limit = $('resize').value === 'original' ? Math.max(size.w, size.h) : $('resize').value === 'custom' ? clamp(Number($('long-edge').value) || 1200, 64, 4096) : Number($('resize').value);
+    const scale = Math.min(1, limit / Math.max(size.w, size.h));
+    return { w: Math.max(1, Math.round(size.w * scale)), h: Math.max(1, Math.round(size.h * scale)) };
+  }
+
+  function rotateContext(c, size) {
+    if (state.turns === 1) { c.translate(size.h, 0); c.rotate(Math.PI / 2); }
+    if (state.turns === 2) { c.translate(size.w, size.h); c.rotate(Math.PI); }
+    if (state.turns === 3) { c.translate(0, size.w); c.rotate(-Math.PI / 2); }
+  }
+
+  function paintImage(c, image, area, size) {
+    const rotated = oriented(area);
+    c.save();
+    c.scale(size.w / rotated.w, size.h / rotated.h);
+    rotateContext(c, area);
+    c.drawImage(image, area.x, area.y, area.w, area.h, 0, 0, area.w, area.h);
+    c.restore();
+  }
+
+  function paintWatermark(c, size) {
+    const label = $('watermark-text').value.trim();
+    if (!$('watermark').checked || !label) return;
+    const date = $('watermark-date-enabled').checked ? $('watermark-date').value : '';
+    const suffix = /^\d{4}-\d{2}-\d{2}$/.test(date) ? ` · ${date.split('-').reverse().join('.')}` : '';
+    const text = label + suffix;
+    const font = Math.max(10, Math.min(size.w, size.h) * .043);
+    c.save();
+    c.globalAlpha = Number($('watermark-opacity').value) / 100;
+    c.fillStyle = '#252525';
+    c.font = `600 ${font}px Golos, Arial, sans-serif`;
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.translate(size.w / 2, size.h / 2);
+    c.rotate(-Math.PI / 6);
+    const span = Math.hypot(size.w, size.h);
+    const stepX = c.measureText(text).width + font * 3;
+    const stepY = font * 4.5;
+    for (let row = -Math.ceil(span / stepY); row <= Math.ceil(span / stepY); row++) {
+      for (let col = -Math.ceil(span / stepX); col <= Math.ceil(span / stepX); col++) {
+        c.fillText(text, col * stepX + (row % 2 ? stepX / 2 : 0), row * stepY);
+      }
+    }
+    c.restore();
   }
 
   function compose() {
@@ -65,7 +125,7 @@
   }
 
   function fitCanvas() {
-    const area = view();
+    const area = oriented();
     const css = getComputedStyle($('stage'));
     const available = $('stage').clientWidth - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight);
     const limit = innerWidth <= 720 ? Math.max(240, Math.min(480, innerHeight * .55)) : 620;
@@ -78,14 +138,21 @@
     frame = 0;
     if (!state.ready) return;
     const area = view();
-    if (canvas.width !== area.w || canvas.height !== area.h) { canvas.width = area.w; canvas.height = area.h; }
+    const size = oriented(area);
+    if (canvas.width !== size.w || canvas.height !== size.h) { canvas.width = size.w; canvas.height = size.h; }
     compose();
-    ctx.clearRect(0, 0, area.w, area.h);
-    ctx.drawImage(state.original ? source : scene, area.x, area.y, area.w, area.h, 0, 0, area.w, area.h);
-    const r = selected();
+    ctx.clearRect(0, 0, size.w, size.h);
+    paintImage(ctx, state.original ? source : scene, area, size);
+    if (!state.original) paintWatermark(ctx, size);
+    const r = state.cropping ? state.cropDraft : selected();
     if (r && !state.original) {
-      const scale = area.w / (canvas.getBoundingClientRect().width || area.w);
+      const scale = size.w / (canvas.getBoundingClientRect().width || size.w);
       ctx.save();
+      rotateContext(ctx, area);
+      if (state.cropping) {
+        ctx.fillStyle = '#25252588';
+        ctx.beginPath(); ctx.rect(0, 0, area.w, area.h); ctx.rect(r.x, r.y, r.w, r.h); ctx.fill('evenodd');
+      }
       ctx.strokeStyle = '#f6821f';
       ctx.lineWidth = 2 * scale;
       ctx.setLineDash([5 * scale, 4 * scale]);
@@ -95,18 +162,21 @@
       ctx.fillRect(r.x + r.w - area.x - 5 * scale, r.y + r.h - area.y - 5 * scale, 10 * scale, 10 * scale);
       ctx.restore();
     }
-    $('dimensions').textContent = `${area.w} × ${area.h}`;
+    const output = outputSize();
+    $('dimensions').textContent = `${size.w} × ${size.h}` + (output.w !== size.w || output.h !== size.h ? ` → ${output.w} × ${output.h}` : '');
     $('filename').textContent = state.name;
     $('region-count').textContent = `Областей: ${state.regions.length}`;
     $('selection-state').textContent = r ? `Область ${state.regions.indexOf(r) + 1}` : 'Новая область';
     $('undo').disabled = !state.history.length || state.busy;
     $('clear').disabled = !state.regions.length || state.busy;
-    $('remove').disabled = !r || state.busy;
-    $('save').disabled = state.busy;
+    $('remove').disabled = !selected() || state.busy || state.cropping;
+    $('save').disabled = state.busy || state.cropping;
+    $('crop-toolbar').hidden = !state.cropping;
+    $('crop-apply').disabled = !state.cropDraft || state.cropDraft.w < 4 || state.cropDraft.h < 4;
     $('compare').setAttribute('aria-pressed', String(state.original));
     $('compare').textContent = state.original ? 'К обработке' : 'Сравнить';
     $('original-label').hidden = !state.original;
-    $('instruction').textContent = state.original ? 'Сохранится обработанная версия. Нажми «К обработке», чтобы продолжить.' : 'Проведи пальцем или мышью, чтобы выделить область';
+    $('instruction').textContent = state.cropping ? 'Выдели нужный фрагмент и нажми «Применить обрезку»' : state.original ? 'Сохранится обработанная версия. Нажми «К обработке», чтобы продолжить.' : 'Проведи пальцем или мышью, чтобы выделить область';
     fitCanvas();
   }
 
@@ -147,6 +217,11 @@
     state.history = [];
     state.selected = null;
     state.original = false;
+    state.turns = 0;
+    state.cropMode = 'full';
+    state.cropRect = null;
+    state.cropDraft = null;
+    state.cropping = false;
     state.ready = true;
     state.name = name;
     $('crop').value = 'full';
@@ -237,7 +312,13 @@
   function point(event) {
     const bounds = canvas.getBoundingClientRect();
     const area = view();
-    return { x: clamp((event.clientX - bounds.left) / bounds.width, 0, 1) * area.w + area.x, y: clamp((event.clientY - bounds.top) / bounds.height, 0, 1) * area.h + area.y };
+    const size = oriented(area);
+    const x = clamp((event.clientX - bounds.left) / bounds.width, 0, 1) * size.w;
+    const y = clamp((event.clientY - bounds.top) / bounds.height, 0, 1) * size.h;
+    if (state.turns === 1) return { x: area.x + y, y: area.y + area.h - x };
+    if (state.turns === 2) return { x: area.x + area.w - x, y: area.y + area.h - y };
+    if (state.turns === 3) return { x: area.x + area.w - y, y: area.y + x };
+    return { x: x + area.x, y: y + area.y };
   }
 
   canvas.addEventListener('pointerdown', event => {
@@ -247,14 +328,19 @@
     state.original = false;
     const p = point(event);
     const area = view();
-    const margin = 16 * area.w / canvas.getBoundingClientRect().width;
-    const r = selected();
+    const margin = 16 * oriented(area).w / canvas.getBoundingClientRect().width;
+    const r = state.cropping ? state.cropDraft : selected();
     const resize = r && Math.abs(p.x - r.x - r.w) < margin && Math.abs(p.y - r.y - r.h) < margin;
-    const hit = resize ? r : [...state.regions].reverse().find(item => p.x >= item.x && p.x <= item.x + item.w && p.y >= item.y && p.y <= item.y + item.h);
-    if (!hit && state.regions.length >= 50) { status('В тестовой версии можно добавить до 50 областей. Удали лишнюю область.', true); return; }
-    drag = { pointer: event.pointerId, start: p, previous: snapshot(), mode: resize ? 'resize' : hit ? 'move' : 'draw', before: hit ? { ...hit } : null };
-    if (hit) { state.selected = hit.id; drag.region = hit; syncTools(); }
-    else { drag.region = newRegion(p.x, p.y, 0, 0); state.regions.push(drag.region); state.selected = drag.region.id; }
+    const candidates = state.cropping ? (r ? [r] : []) : [...state.regions].reverse();
+    const hit = resize ? r : candidates.find(item => p.x >= item.x && p.x <= item.x + item.w && p.y >= item.y && p.y <= item.y + item.h);
+    if (!state.cropping && !hit && state.regions.length >= 50) { status('В тестовой версии можно добавить до 50 областей. Удали лишнюю область.', true); return; }
+    drag = { pointer: event.pointerId, start: p, previous: snapshot(), cropping: state.cropping, oldDraft: state.cropDraft ? { ...state.cropDraft } : null, mode: resize ? 'resize' : hit ? 'move' : 'draw', before: hit ? { ...hit } : null };
+    if (hit) { drag.region = hit; if (!state.cropping) { state.selected = hit.id; syncTools(); } }
+    else {
+      drag.region = newRegion(p.x, p.y, 0, 0);
+      if (state.cropping) state.cropDraft = drag.region;
+      else { state.regions.push(drag.region); state.selected = drag.region.id; }
+    }
     canvas.setPointerCapture(event.pointerId);
     requestRender();
   });
@@ -272,7 +358,9 @@
     if (!drag || drag.pointer !== event.pointerId) return;
     const previous = drag.previous;
     const tooSmall = drag.mode === 'draw' && (drag.region.w < 4 || drag.region.h < 4);
-    if (cancel || tooSmall) { state.regions = JSON.parse(previous); state.selected = null; }
+    if (drag.cropping) {
+      if (cancel || tooSmall) state.cropDraft = drag.oldDraft;
+    } else if (cancel || tooSmall) { restore(previous); state.selected = null; }
     else if (snapshot() !== previous) remember(previous);
     drag = null;
     if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
@@ -283,7 +371,7 @@
   canvas.addEventListener('pointercancel', event => finishPointer(event, true));
 
   function addRegion() {
-    if (!state.ready || state.busy || state.regions.length >= 50) return;
+    if (!state.ready || state.busy || state.cropping || state.regions.length >= 50) return;
     remember();
     const area = view();
     const r = newRegion(area.x + area.w * .3, area.y + area.h * .4, area.w * .4, area.h * .2);
@@ -297,7 +385,7 @@
 
   function undo() {
     if (!state.history.length || state.busy) return;
-    state.regions = JSON.parse(state.history.pop());
+    restore(state.history.pop());
     state.selected = null;
     state.original = false;
     syncTools();
@@ -309,8 +397,54 @@
     remember(); state.regions = state.regions.filter(r => r.id !== state.selected); state.selected = null; syncTools(); requestRender();
   });
   $('clear').addEventListener('click', () => { remember(); state.regions = []; state.selected = null; state.original = false; syncTools(); requestRender(); });
-  $('compare').addEventListener('click', () => { state.original = !state.original; requestRender(); });
-  $('crop').addEventListener('change', () => { state.original = false; requestRender(); });
+  $('compare').addEventListener('click', () => { if (!state.cropping) { state.original = !state.original; requestRender(); } });
+
+  function startCrop() {
+    if (!state.ready || state.busy) return;
+    state.original = false;
+    state.cropping = true;
+    state.cropDraft = state.cropMode === 'custom' && state.cropRect ? { ...state.cropRect } : null;
+    state.selected = null;
+    $('crop').value = 'custom';
+    requestRender();
+    canvas.scrollIntoView({ block: 'center', behavior: 'instant' });
+  }
+  function cancelCrop() {
+    state.cropping = false; state.cropDraft = null; $('crop').value = state.cropMode; requestRender();
+  }
+  function applyCrop() {
+    if (!state.cropDraft || state.cropDraft.w < 4 || state.cropDraft.h < 4) return;
+    remember();
+    const r = state.cropDraft;
+    const x = Math.floor(r.x), y = Math.floor(r.y);
+    state.cropRect = { x, y, w: Math.min(source.width - x, Math.ceil(r.x + r.w) - x), h: Math.min(source.height - y, Math.ceil(r.y + r.h) - y) };
+    state.cropMode = 'custom'; state.cropping = false; state.cropDraft = null;
+    $('crop').value = 'custom'; requestRender();
+    status('Кадр обрезан. Маски сохранены. Поворот и обрезку можно отменить.');
+  }
+  $('crop-edit').addEventListener('click', startCrop);
+  $('crop-cancel').addEventListener('click', cancelCrop);
+  $('crop-apply').addEventListener('click', applyCrop);
+  $('crop').addEventListener('change', () => {
+    if ($('crop').value === 'custom') { startCrop(); return; }
+    remember(); state.cropMode = $('crop').value; state.cropping = false; state.cropDraft = null; state.original = false; requestRender();
+  });
+  function turn(delta) {
+    if (!state.ready || state.busy) return;
+    remember(); state.turns = (state.turns + delta + 4) % 4; state.original = false; requestRender();
+  }
+  $('rotate-left').addEventListener('click', () => turn(-1));
+  $('rotate-right').addEventListener('click', () => turn(1));
+  $('resize').addEventListener('change', () => { $('custom-size-options').hidden = $('resize').value !== 'custom'; requestRender(); });
+  $('long-edge').addEventListener('input', requestRender);
+  $('format').addEventListener('change', () => { $('quality-options').hidden = $('format').value !== 'image/jpeg'; });
+  $('quality').addEventListener('input', () => { $('quality-value').value = `${$('quality').value}%`; });
+  $('watermark').addEventListener('change', () => { $('watermark-options').hidden = !$('watermark').checked; requestRender(); });
+  for (const id of ['watermark-text', 'watermark-date', 'watermark-date-enabled', 'watermark-opacity']) {
+    $(id).addEventListener('input', () => { $('watermark-opacity-value').value = `${$('watermark-opacity').value}%`; requestRender(); });
+  }
+  const today = new Date();
+  $('watermark-date').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   document.querySelectorAll('[data-tool]').forEach(button => button.addEventListener('click', () => {
     state.tool = button.dataset.tool;
     const r = selected(); if (r && r.type !== state.tool) { remember(); r.type = state.tool; }
@@ -332,13 +466,13 @@
     requestRender();
   });
   canvas.addEventListener('keydown', event => {
-    if (event.key === 'Escape') { state.selected = null; requestRender(); return; }
-    if (event.key === 'Enter') { event.preventDefault(); addRegion(); return; }
-    const r = selected();
+    if (event.key === 'Escape') { if (state.cropping) cancelCrop(); else { state.selected = null; requestRender(); } return; }
+    if (event.key === 'Enter') { event.preventDefault(); if (state.cropping) applyCrop(); else addRegion(); return; }
+    const r = state.cropping ? state.cropDraft : selected();
     if (!r) return;
-    if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); $('remove').click(); return; }
+    if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); if (state.cropping) { state.cropDraft = null; requestRender(); } else $('remove').click(); return; }
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
-    event.preventDefault(); remember();
+    event.preventDefault(); if (!state.cropping) remember();
     const step = Math.max(1, Math.round(view().w / 200));
     const dx = event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0;
     const dy = event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0;
@@ -367,20 +501,25 @@
   }
 
   $('save').addEventListener('click', async () => {
-    if (!state.ready || state.busy || drag) return;
+    if (!state.ready || state.busy || drag || state.cropping) return;
+    if ($('watermark').checked && !$('watermark-text').value.trim()) { status('Введи подпись для водяного знака или отключи его.', true); $('watermark-text').focus(); return; }
+    if ($('resize').value === 'custom' && !$('long-edge').checkValidity()) { $('long-edge').reportValidity(); return; }
     state.busy = true; $('save').disabled = true;
     status('Сохраняем обработанную картинку…');
     try {
       compose();
       const area = view();
+      const size = outputSize();
       const output = document.createElement('canvas');
-      output.width = area.w; output.height = area.h;
+      output.width = size.w; output.height = size.h;
       const c = output.getContext('2d');
       const type = $('format').value;
       if (type === 'image/jpeg') { c.fillStyle = '#ffffff'; c.fillRect(0, 0, output.width, output.height); }
-      c.drawImage(scene, area.x, area.y, area.w, area.h, 0, 0, area.w, area.h);
+      c.imageSmoothingQuality = 'high';
+      paintImage(c, scene, area, size);
+      paintWatermark(c, size);
       // Export only the newly rasterized canvas, never the source file or selection outlines.
-      const blob = await new Promise(resolve => output.toBlob(resolve, type, .94));
+      const blob = await new Promise(resolve => output.toBlob(resolve, type, Number($('quality').value) / 100));
       if (!blob) throw new Error('Image export failed');
       if (savedURL) URL.revokeObjectURL(savedURL);
       savedBlob = blob;
@@ -393,7 +532,8 @@
       $('share').hidden = !(navigator.canShare && navigator.canShare({ files: [file] }));
       download();
       if (!$('saved-dialog').open) $('saved-dialog').showModal();
-      status(`Готово · ${area.w} × ${area.h} · ${type === 'image/png' ? 'PNG' : 'JPEG'} · без исходных EXIF. Проверь результат перед отправкой.`);
+      const weight = blob.size >= 1048576 ? `${(blob.size / 1048576).toFixed(1)} МБ` : `${Math.max(1, Math.round(blob.size / 1024))} КБ`;
+      status(`Готово · ${size.w} × ${size.h} · ${type === 'image/png' ? 'PNG' : 'JPEG'} · ${weight} · без исходных EXIF. Проверь результат перед отправкой.`);
     } catch { status('Браузеру не удалось сохранить картинку. Попробуй PNG или изображение меньшего размера.', true); }
     finally { state.busy = false; requestRender(); }
   });

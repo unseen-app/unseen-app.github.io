@@ -9,13 +9,13 @@
   <title>Мастерская приватности · Unseen</title>
   <meta name="description" content="Прикрой личное на фото и скриншотах. Обработка на твоём устройстве, без отправки изображений на сервер.">
   <link rel="icon" href="../icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="workshop.css?v=1">
-  <script src="workshop.js?v=1" defer></script>
+  <link rel="stylesheet" href="workshop.css?v=2">
+  <script src="workshop.js?v=2" defer></script>
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="../" aria-label="На сайт Unseen"><img src="../wordmark.svg" width="166" height="40" alt="Unseen"></a>
-    <span class="lab-tag"><span></span>Мастерская <small>0.1 / тест</small></span>
+    <span class="lab-tag"><span></span>Мастерская <small>0.2 / бета</small></span>
     <a class="feedback" href="https://www.instagram.com/unseen.connect/" target="_blank" rel="noopener noreferrer">Обратная связь <span aria-hidden="true">↗</span></a>
   </header>
 
@@ -41,10 +41,25 @@
           <div class="pixel-control" id="pixel-options" hidden><label for="strength">Размер пикселя <output id="strength-value">24</output></label><input id="strength" type="range" min="6" max="64" value="24"><label class="check-label"><input type="checkbox" id="soft"> Мягкие края пикселей</label><p class="hint">Для паролей и текста выбери «Закрыть»: пикселизация может оставить их узнаваемыми.</p></div>
         </section>
 
+        <section class="control-group watermark-settings">
+          <h2>Водяной знак</h2>
+          <label class="check-label"><input type="checkbox" id="watermark"> Добавить на картинку</label>
+          <div id="watermark-options" hidden>
+            <label class="field-label" for="watermark-text">Для кого эта копия</label><input id="watermark-text" type="text" maxlength="80" value="Только для проверки" autocomplete="off" spellcheck="false">
+            <label class="check-label date-check"><input type="checkbox" id="watermark-date-enabled" checked> Добавить дату</label><input id="watermark-date" type="date" aria-label="Дата на водяном знаке">
+            <label class="range-label" for="watermark-opacity">Заметность <output id="watermark-opacity-value">24%</output></label><input id="watermark-opacity" type="range" min="10" max="65" value="24">
+            <p class="hint">Например: «Только для аренды квартиры». Подпись повторится по диагонали на фото документа.</p>
+          </div>
+        </section>
+
         <section class="control-group export-settings">
           <h2>Готовая картинка</h2>
-          <label class="field-label" for="crop">Размер кадра</label><select id="crop"><option value="full">Как в оригинале</option><option value="avatar">Квадрат для аватара · по центру</option></select>
+          <label class="field-label" for="crop">Кадр</label><select id="crop"><option value="full">Как в оригинале</option><option value="avatar">Квадрат для аватара · по центру</option><option value="custom">Свободная обрезка</option></select>
+          <div class="transform-actions"><button id="crop-edit" type="button">✂ Обрезать</button><button id="rotate-left" type="button" aria-label="Повернуть на 90 градусов влево">↶ 90°</button><button id="rotate-right" type="button" aria-label="Повернуть на 90 градусов вправо">↷ 90°</button></div>
+          <label class="field-label" for="resize">Размер для отправки</label><select id="resize"><option value="original">Без уменьшения</option><option value="2048">До 2048 px · большое фото</option><option value="1280">До 1280 px · для переписки</option><option value="800">До 800 px · компактно</option><option value="custom">Свой размер</option></select>
+          <div id="custom-size-options" hidden><label class="field-label" for="long-edge">Длинная сторона, px</label><input id="long-edge" type="number" min="64" max="4096" step="1" value="1200" inputmode="numeric"></div>
           <label class="field-label" for="format">Формат</label><select id="format"><option value="image/png">PNG · чёткий текст</option><option value="image/jpeg">JPEG · компактное фото</option></select>
+          <div id="quality-options" hidden><label class="range-label" for="quality">Качество JPEG <output id="quality-value">90%</output></label><input id="quality" type="range" min="40" max="100" value="90"><p class="hint">Меньше качество — меньше размер файла. Вес покажем после сохранения.</p></div>
           <p class="export-note"><span aria-hidden="true">✓</span> Сохранение без исходных EXIF</p>
         </section>
 
@@ -53,6 +68,7 @@
 
       <section class="workspace" aria-label="Изображение">
         <div class="workspace-toolbar"><div class="file-info"><span class="file-dot" aria-hidden="true"></span><span id="filename">Пример</span><small id="dimensions">Загрузка…</small></div><button class="compare" id="compare" type="button" aria-pressed="false">Сравнить</button></div>
+        <div class="crop-toolbar" id="crop-toolbar" hidden><span>Выдели фрагмент на фото</span><button id="crop-cancel" type="button">Отмена</button><button id="crop-apply" type="button">Применить обрезку</button></div>
         <div class="stage" id="stage"><canvas id="canvas" width="1440" height="1000" tabindex="0" aria-label="Изображение для обработки. Выдели область мышью или пальцем. Стрелки перемещают выбранную маску, Shift и стрелки меняют размер."></canvas><div class="original-label" id="original-label" hidden>Оригинал · только просмотр</div><div class="drop-message" id="drop-message" hidden>Отпусти фото здесь</div></div>
         <div class="workspace-bottom"><p id="instruction">Проведи пальцем или мышью, чтобы выделить область</p><div class="edit-actions"><button id="undo" type="button" disabled aria-label="Отменить последнее действие">↶ <span>Отменить</span></button><button id="remove" type="button" disabled>Удалить область</button><button id="clear" type="button" disabled>Сбросить</button></div></div>
         <div class="selection-row"><span id="region-count">Областей: 0</span><button id="add-region" type="button">＋ Добавить по центру</button><small>Область можно двигать и менять за угол</small></div>
