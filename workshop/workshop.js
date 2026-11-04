@@ -1,4 +1,5 @@
 'use strict';
+import { prepareFile, rasterPdf, ACCEPT } from './imports.mjs';
 
 (() => {
   const $ = id => document.getElementById(id);
@@ -14,6 +15,11 @@
   let savedURL = null;
   let savedBlob = null;
   let savedName = '';
+  let documentFile = null;
+  let pageIndex = 0;
+  let pageEdits = new Map();
+  let importAbort = null;
+  $('file').accept = ACCEPT;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const selected = () => state.regions.find(region => region.id === state.selected);
   const validCrop = () => state.cropDraft && state.cropDraft.w >= 4 && state.cropDraft.h >= 4;
@@ -173,6 +179,9 @@
     $('clear').textContent = state.cropping ? 'Отменить обрезку' : 'Сбросить маски';
     $('remove').disabled = !selected() || state.busy || state.cropping;
     $('save').disabled = state.busy;
+    $('page-prev').disabled = state.busy || pageIndex <= 0;
+    $('page-next').disabled = state.busy || !documentFile || pageIndex >= documentFile.count-1;
+    $('page-select').disabled = state.busy;
     $('save').firstChild.textContent = state.cropping && validCrop() ? 'Обрезать и сохранить ' : 'Сохранить картинку ';
     $('crop-toolbar').hidden = !state.cropping;
     $('crop-apply').disabled = !validCrop();
@@ -246,32 +255,32 @@
 
   async function openFile(file) {
     if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { status('Выбери JPEG, PNG или WebP. Этот формат пока не поддерживается.', true); return; }
-    if (file.size > 35 * 1024 * 1024) { status('Для тестовой версии выбери изображение до 35 МБ.', true); return; }
+    importAbort?.abort();
+    const controller = new AbortController();
+    importAbort = controller;
     const version = ++loadVersion;
     state.busy = true;
     $('editor').setAttribute('aria-busy', 'true');
     $('save').disabled = true;
-    status('Открываем изображение на устройстве…');
-    let image;
-    let url;
+    status('Проверяем содержимое файла и открываем на устройстве…');
+    let prepared;
     try {
-      if ('createImageBitmap' in window) image = await createImageBitmap(file, { imageOrientation: 'from-image' });
-      else {
-        url = URL.createObjectURL(file);
-        image = new Image();
-        image.src = url;
-        await image.decode();
-      }
-      if (version !== loadVersion) return;
-      if (!image.width || !image.height) throw new Error('Empty image');
+      prepared = await prepareFile(file,controller.signal);
+      const image = await prepared.render(0);
+      if (version !== loadVersion) { prepared.dispose(); return; }
+      documentFile?.dispose();
+      documentFile = prepared;
+      documentFile.name = file.name;
+      pageIndex = 0; pageEdits = new Map();
       acceptImage(image, file.name, image.width, image.height);
-    } catch {
-      if (version === loadVersion) status('Не удалось открыть изображение. Попробуй другой файл JPEG, PNG или WebP.', true);
+      updatePages();
+      if (prepared.note) status(prepared.note);
+    } catch(error) {
+      if (prepared && prepared !== documentFile) prepared.dispose();
+      if (version === loadVersion && error.name !== 'AbortError') status(/[а-яё]/i.test(error.message||'') ? error.message : 'Не удалось открыть файл. Он повреждён, слишком сложен или не поддерживается.', true);
     } finally {
-      image?.close?.();
-      if (url) URL.revokeObjectURL(url);
       if (version === loadVersion) {
+        if(importAbort === controller) importAbort = null;
         state.busy = false;
         $('editor').setAttribute('aria-busy', 'false');
         $('save').disabled = !state.ready;
@@ -280,7 +289,41 @@
     }
   }
 
+  function updatePages() {
+    const count = documentFile?.count || 1;
+    $('document-nav').hidden = count <= 1;
+    $('document-note').hidden = !documentFile?.note;
+    $('document-note').textContent = documentFile?.note || '';
+    $('page-select').replaceChildren(...Array.from({length:count},(_,index)=>{
+      const option = document.createElement('option'); option.value = String(index); option.textContent = `${index+1} / ${count}`; return option;
+    }));
+    $('page-select').value = String(pageIndex);
+  }
+  async function changePage(index) {
+    if(!documentFile || state.busy || !Number.isInteger(index) || index<0 || index>=documentFile.count || index===pageIndex)return;
+    finishCropForEditing();
+    pageEdits.set(pageIndex,snapshot());
+    const current = documentFile, version = ++loadVersion;
+    state.busy = true; $('editor').setAttribute('aria-busy','true'); requestRender();
+    status('Открываем страницу…');
+    try {
+      const image = await current.render(index);
+      if(version!==loadVersion)return;
+      pageIndex=index;
+      acceptImage(image,current.name,image.width,image.height);
+      if(pageEdits.has(index)){restore(pageEdits.get(index));syncTools();}
+      updatePages();
+      status(`Страница ${index+1} из ${current.count}. Сохраняется только текущая страница.`);
+    }catch(error){if(version===loadVersion)status(error.message||'Не удалось открыть страницу.',true);}
+    finally{if(version===loadVersion){state.busy=false;$('editor').setAttribute('aria-busy','false');$('page-select').value=String(pageIndex);requestRender();}}
+  }
+  $('page-prev').addEventListener('click',()=>changePage(pageIndex-1));
+  $('page-next').addEventListener('click',()=>changePage(pageIndex+1));
+  $('page-select').addEventListener('change',()=>changePage(Number($('page-select').value)));
+
   function drawExample() {
+    importAbort?.abort(); importAbort=null;
+    documentFile?.dispose(); documentFile=null; pageEdits=new Map(); pageIndex=0; updatePages();
     ++loadVersion;
     state.busy = false;
     $('editor').setAttribute('aria-busy', 'false');
@@ -544,18 +587,19 @@
       output.width = size.w; output.height = size.h;
       const c = output.getContext('2d');
       const type = $('format').value;
-      if (type === 'image/jpeg') { c.fillStyle = '#ffffff'; c.fillRect(0, 0, output.width, output.height); }
+      if (type !== 'image/png') { c.fillStyle = '#ffffff'; c.fillRect(0, 0, output.width, output.height); }
       c.imageSmoothingQuality = 'high';
       paintImage(c, scene, area, size);
       paintWatermark(c, size);
       // Export only the newly rasterized canvas, never the source file or selection outlines.
-      const blob = await new Promise(resolve => output.toBlob(resolve, type, Number($('quality').value) / 100));
+      const blob = type === 'application/pdf' ? await rasterPdf(output) : await new Promise(resolve => output.toBlob(resolve, type, Number($('quality').value) / 100));
       if (!blob) throw new Error('Image export failed');
       if (savedURL) URL.revokeObjectURL(savedURL);
       savedBlob = blob;
       savedURL = URL.createObjectURL(blob);
-      savedName = `Unseen-${$('crop').value === 'avatar' ? 'avatar' : 'private'}.${type === 'image/png' ? 'png' : 'jpg'}`;
-      $('saved-preview').src = savedURL;
+      const suffix = { 'image/png':'png','image/jpeg':'jpg','application/pdf':'pdf' }[type];
+      savedName = `Unseen-${$('crop').value === 'avatar' ? 'avatar' : 'private'}${documentFile?.count>1?`-page-${pageIndex+1}`:''}.${suffix}`;
+      $('saved-preview').src = type === 'application/pdf' ? output.toDataURL('image/png') : savedURL;
       $('download-again').href = savedURL; $('download-again').download = savedName;
       $('open-image').href = savedURL;
       const file = new File([blob], savedName, { type: blob.type });
@@ -564,7 +608,7 @@
       if (!$('saved-dialog').open) $('saved-dialog').showModal();
       window.UnseenTelegram?.sync();
       const weight = blob.size >= 1048576 ? `${(blob.size / 1048576).toFixed(1)} МБ` : `${Math.max(1, Math.round(blob.size / 1024))} КБ`;
-      status(`Готово · ${size.w} × ${size.h} · ${type === 'image/png' ? 'PNG' : 'JPEG'} · ${weight} · без исходных EXIF. Проверь результат перед отправкой.`);
+      status(`Готово · ${size.w} × ${size.h} · ${suffix.toUpperCase()} · ${weight} · без исходных EXIF. Проверь результат перед отправкой.`);
     } catch { status('Браузеру не удалось сохранить картинку. Попробуй PNG или изображение меньшего размера.', true); }
     finally { state.busy = false; requestRender(); }
   });

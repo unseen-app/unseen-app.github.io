@@ -5,32 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f5f5f5">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
   <title>Мастерская приватности · Unseen</title>
   <meta name="description" content="Прикрой личное на фото и скриншотах. Обработка на твоём устройстве, без отправки изображений на сервер.">
   <link rel="icon" href="../icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="workshop.css?v=4">
+  <link rel="stylesheet" href="workshop.css?v=5">
   <script src="vendor/telegram-web-app.js?v=20261104" defer></script>
-  <script src="telegram.js?v=4" defer></script>
-  <script src="workshop.js?v=4" defer></script>
+  <script src="telegram.js?v=5" defer></script>
+  <script src="workshop.js?v=5" type="module"></script>
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="../" aria-label="На сайт Unseen"><img src="../wordmark.svg" width="166" height="40" alt="Unseen"></a>
-    <span class="lab-tag"><span></span>Мастерская <small>0.4 / бета</small></span>
+    <span class="lab-tag"><span></span>Мастерская <small>0.5 / бета</small></span>
     <a class="feedback" href="https://www.instagram.com/unseen.connect/" target="_blank" rel="noopener noreferrer">Обратная связь <span aria-hidden="true">↗</span></a>
   </header>
 
   <main>
     <section class="intro" aria-labelledby="title">
       <div><p class="eyebrow">Мастерская приватности</p><h1 id="title">Покажи главное.<br><span>Личное прикрой.</span></h1></div>
-      <div class="intro-note"><span class="local-icon" aria-hidden="true">⌁</span><p>Фото обрабатывается на твоём устройстве.<br>Нам оно не отправляется.</p></div>
+      <div class="intro-note"><span class="local-icon" aria-hidden="true">⌁</span><p>Файлы обрабатываются на твоём устройстве.<br>Нам они не отправляются.</p></div>
     </section>
 
     <div class="editor" id="editor" aria-busy="false">
       <aside class="controls" aria-label="Инструменты обработки">
-        <button class="button upload" id="upload" type="button"><span aria-hidden="true">＋</span> Выбрать изображение</button>
-        <input id="file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+        <button class="button upload" id="upload" type="button"><span aria-hidden="true">＋</span> Выбрать файл</button>
+        <input id="file" type="file" accept=".jpg,.jpeg,.jpe,.jfif,.png,.webp,.gif,.bmp,.avif,.heic,.heif,.tif,.tiff,.pdf,.docx,.xlsx,.pptx,.odt,.ods,.odp,.txt,.csv" hidden>
+        <details class="format-help"><summary>Форматы и ограничения</summary><p>Фото: JPEG, PNG, WebP, GIF, BMP, AVIF, HEIC/HEIF, TIFF. GIF и TIFF открываются первым кадром.</p><p>Документы: PDF, DOCX, XLSX, PPTX, ODT, ODS, ODP, TXT, CSV. Офисные документы — текстовый предпросмотр.</p><p>До 35 МБ, 40 Мп и 50 страниц предпросмотра. Файлы с паролем, макросами, активными вложениями, HTML, SVG и исполняемые файлы не принимаются. Старые DOC, XLS и PPT сначала сохрани в PDF или современный офисный формат.</p><p>Формат проверяется по содержимому. Эти проверки не являются антивирусным заключением.</p></details>
         <button class="example" id="example" type="button">Или попробовать на примере <span aria-hidden="true">↗</span></button>
 
         <section class="control-group">
@@ -60,9 +61,9 @@
           <div class="transform-actions"><button id="crop-edit" type="button">✂ Выбрать кадр</button><button id="crop-cancel-side" type="button" hidden>Отмена</button><button id="rotate-left" type="button" aria-label="Повернуть на 90 градусов влево">↶ 90°</button><button id="rotate-right" type="button" aria-label="Повернуть на 90 градусов вправо">↷ 90°</button></div>
           <label class="field-label" for="resize">Размер для отправки</label><select id="resize"><option value="original">Без уменьшения</option><option value="2048">До 2048 px · большое фото</option><option value="1280">До 1280 px · для переписки</option><option value="800">До 800 px · компактно</option><option value="custom">Свой размер</option></select>
           <div id="custom-size-options" hidden><label class="field-label" for="long-edge">Длинная сторона, px</label><input id="long-edge" type="number" min="64" max="4096" step="1" value="1200" inputmode="numeric"></div>
-          <label class="field-label" for="format">Формат</label><select id="format"><option value="image/png">PNG · чёткий текст</option><option value="image/jpeg">JPEG · компактное фото</option></select>
+          <label class="field-label" for="format">Формат</label><select id="format"><option value="image/png">PNG · чёткий текст</option><option value="image/jpeg">JPEG · компактное фото</option><option value="application/pdf">PDF · текущая страница</option></select>
           <div id="quality-options" hidden><label class="range-label" for="quality">Качество JPEG <output id="quality-value">90%</output></label><input id="quality" type="range" min="40" max="100" value="90"><p class="hint">Меньше качество — меньше размер файла. Вес покажем после сохранения.</p></div>
-          <p class="export-note"><span aria-hidden="true">✓</span> Сохранение без исходных EXIF</p>
+          <p class="export-note"><span aria-hidden="true">✓</span> Копия без исходных метаданных</p>
         </section>
 
         <button class="button save" id="save" type="button">Сохранить картинку <span aria-hidden="true">↓</span></button>
@@ -70,6 +71,7 @@
 
       <section class="workspace" aria-label="Изображение">
         <div class="workspace-toolbar"><div class="file-info"><span class="file-dot" aria-hidden="true"></span><span id="filename">Пример</span><small id="dimensions">Загрузка…</small></div><button class="compare" id="compare" type="button" aria-pressed="false">Сравнить</button></div>
+        <div class="document-nav" id="document-nav" hidden><button id="page-prev" type="button" aria-label="Предыдущая страница">←</button><label for="page-select">Страница</label><select id="page-select" aria-label="Страница документа"></select><button id="page-next" type="button" aria-label="Следующая страница">→</button></div><p class="document-note" id="document-note" hidden></p>
         <div class="stage" id="stage"><canvas id="canvas" width="1440" height="1000" tabindex="0" aria-label="Изображение для обработки. Выдели область мышью или пальцем. Стрелки перемещают выбранную маску, Shift и стрелки меняют размер."></canvas><div class="original-label" id="original-label" hidden>Оригинал · только просмотр</div><div class="drop-message" id="drop-message" hidden>Отпусти фото здесь</div></div>
         <div class="crop-toolbar" id="crop-toolbar" hidden><span id="crop-guide">Выдели фрагмент на фото</span><button id="crop-redraw" type="button">Выделить заново</button><button id="crop-cancel" type="button">Отмена</button><button id="crop-apply" type="button">Обрезать</button></div>
         <div class="workspace-bottom"><p id="instruction">Проведи пальцем или мышью, чтобы выделить область</p><div class="edit-actions"><button id="undo" type="button" disabled aria-label="Отменить последнее действие">↶ <span>Отменить</span></button><button id="remove" type="button" disabled>Удалить область</button><button id="clear" type="button" disabled>Сбросить</button></div></div>
