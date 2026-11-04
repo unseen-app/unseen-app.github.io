@@ -10,7 +10,7 @@
 Android TV — совсем ранняя версия, сейчас ориентированная на YouTube.
 Приложения находятся в бета-тестировании. Работа зависит от сети.
 
-Связь с разработчиком: https://www.instagram.com/artemseeyou/
+Связь с разработчиком: https://www.instagram.com/unseen.connect/
 
 Основной адрес сайта: https://unseen-app.github.io/
 Файлы приложений продолжают скачиваться из существующего выпуска GitHub Releases.
