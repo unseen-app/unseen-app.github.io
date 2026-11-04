@@ -5,7 +5,7 @@
 
 Публикация GitHub Pages: Settings → Pages → Deploy from a branch → main → /(root).
 Файлы приложений размещены в GitHub Releases. На странице ссылки на выпуск
-`downloads-2026-11-01`: Windows 3.6.7, Android 0.77, TV 0.1.3.
+`downloads-2026-11-01`: Windows 3.6.7, Android 0.79, TV 0.1.3.
 
 Android TV — совсем ранняя версия, сейчас ориентированная на YouTube.
 Приложения находятся в бета-тестировании. Работа зависит от сети.
