@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f6821f">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
+  <title>Данные и конфиденциальность · Unseen</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="privacy.css?v=1">
+</head>
+<body>
+  <header class="header wrap"><a href="index.html" aria-label="Unseen — на главную"><img src="wordmark.svg" width="166" height="40" alt="Unseen"></a><a class="text-link" href="index.html">На главную</a></header>
+  <main class="privacy-page wrap">
+    <p class="eyebrow">Unseen · информация для посетителей</p>
+    <h1>Данные и конфиденциальность</h1>
+    <p class="privacy-lead">Мы не просим регистрироваться и не загружаем выбранные в мастерской файлы на сайт. Ниже описано, какие данные могут обрабатываться при посещении сайта и использовании демо.</p>
+
+    <section><h2>Статистика посещений — только по выбору</h2>
+      <p>Если вы нажмёте «Разрешить статистику», сайт загрузит Umami Cloud и будет передавать ему просмотр страницы и события нажатий на ссылки скачивания, поддержки и обратной связи. Umami обрабатывает сведения о браузере и IP-адрес для расчёта приблизительного региона и идентификатора сессии. По настройкам проекта выбран регион хранения аналитики EU; поставщик отдельно указывает, что технические процессы и журналы могут затрагивать другие регионы. Для тарифа Hobby документация указывает хранение аналитических данных в течение шести месяцев.</p>
+      <p>Если вы откажетесь, счётчик не загружается. Выбор хранится в localStorage этого браузера под ключом настройки согласия до очистки данных сайта; это не cookie. Его можно изменить кнопкой «Настройки статистики» внизу главной страницы.</p>
+      <p>Umami заявляет, что его счётчик не использует cookies. Само отсутствие cookies не означает отсутствия обработки сетевых данных. Разрешение на статистику на этом сайте не заменяет иных правовых обязанностей оператора. Подробности: <a href="https://docs.umami.is/docs/metric-definitions" rel="noreferrer">описание метрик Umami</a> и <a href="https://docs.umami.is/docs/cloud/faq" rel="noreferrer">FAQ Umami Cloud</a>.</p>
+    </section>
+
+    <section><h2>Хостинг и технические журналы</h2>
+      <p>Сайт размещён на GitHub Pages. GitHub сообщает, что регистрирует и хранит IP-адреса посетителей в целях безопасности. Эта техническая обработка выполняется инфраструктурой хостинга и не управляется настройкой согласия на статистику на сайте. Срок хранения этих технических записей определяется GitHub и в настройках сайта не задаётся. См. <a href="https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages" rel="noreferrer">описание GitHub Pages</a>.</p>
+    </section>
+
+    <section><h2>Мастерская</h2>
+      <p>Изображения и документы открываются и обрабатываются в памяти браузера. Сайт не отправляет их на сервер. Обработанная копия сохраняется на вашем устройстве. Декодеры мастерской загружаются с этого же сайта.</p>
+    </section>
+
+    <section><h2>Демо страниц</h2>
+      <p>Если вы запускаете демо Telegram Web или YouTube, браузер отправляет выбранный фиксированный вариант на Cloudflare Worker. Cloudflare обрабатывает IP-адрес запроса, в том числе для ограничения частоты обращений. Worker открывает публичную страницу без вашей учётной записи и создаёт снимок, который временно хранится в Cloudflare Durable Objects до 30 минут и затем удаляется. Не входите в аккаунты и не вводите личные данные в демо.</p>
+    </section>
+
+    <section><h2>Как связаться</h2>
+      <p>По вопросам обработки данных напишите через <a href="https://www.instagram.com/unseen.connect/" rel="noreferrer">Instagram @unseen.connect</a>. Мы не публикуем личные реквизиты владельца проекта. Поэтому эта страница описывает фактические потоки данных, но не заменяет юридически полную политику оператора, если она требуется применимым законом.</p>
+    </section>
+  </main>
+  <footer class="footer wrap"><div><a href="index.html" aria-label="Unseen — на главную"><img src="wordmark.svg" width="166" height="40" alt="Unseen"></a><p>Пусть близкие будут ближе.</p></div><a href="index.html">На главную</a></footer>
+</body>
+</html>

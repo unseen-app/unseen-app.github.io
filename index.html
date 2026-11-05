@@ -4,14 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#f6821f">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cloud.umami.is; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://cloud.umami.is https://unseen-site-demo.ravin3657345.workers.dev; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'; upgrade-insecure-requests">
   <title>Unseen — снова на связи</title>
   <meta name="description" content="Unseen помогает обходить блокировки и оставаться на связи. Бесплатно для Windows, Android и Android TV.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preload" href="golos-text.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="styles.css?v=6">
-  <script defer src="https://cloud.umami.is/script.js" data-website-id="444cec39-32c9-467d-bd17-d0946e998798" data-domains="unseen-app.github.io" data-exclude-hash="true"></script>
   <link rel="stylesheet" href="demo.css?v=2">
   <script defer src="demo.js?v=2"></script>
+  <script defer src="privacy-consent.js?v=1"></script>
 </head>
 <body>
 <a class="skip" href="#downloads">Перейти к скачиванию</a>
@@ -75,6 +77,10 @@
 
   <section class="questions wrap section" aria-labelledby="faq-title"><div class="help-intro"><h2 id="faq-title">Есть вопросы?</h2><p>Мы ещё в бете. Если что-то не работает — напиши нам. Укажи устройство, версию Unseen и тип сети.</p><a class="text-link" data-umami-event="contact_instagram" href="https://www.instagram.com/unseen.connect/" target="_blank" rel="noopener noreferrer">Написать разработчику <span aria-hidden="true">↗</span></a></div><div class="faq"><details><summary>Это правда бесплатно?<span aria-hidden="true">+</span></summary><p>Да. В Unseen нет регистрации и платной подписки. Добровольная поддержка не открывает дополнительных функций.</p></details><details><summary>Почему Android запрашивает VPN?<span aria-hidden="true">+</span></summary><p>Unseen использует системный VPN-интерфейс Android для обработки подключений. Разрешение нужно при первом включении защиты.</p></details><details><summary>Что умеет версия для ТВ?<span aria-hidden="true">+</span></summary><p>Это совсем ранняя версия, сейчас ориентированная на YouTube. Другие приложения не включены. Совместимость зависит от модели телевизора, а фоновый запуск настраивается отдельно.</p></details><details><summary>Можно ли сменить страну?<span aria-hidden="true">+</span></summary><p>Смена страны не является функцией Unseen. Доступность сервисов зависит от сети, сервера и доступных способов обхода.</p></details></div></section>
 </main>
-<footer class="footer wrap"><div><a href="#top" aria-label="В начало"><img src="wordmark.svg" width="166" height="40" alt="Unseen"></a><p>Пусть близкие будут ближе.</p></div><a href="https://github.com/unseen-app/unseen-app.github.io" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a></footer>
+<aside class="privacy-banner" id="privacy-banner" role="dialog" aria-labelledby="privacy-banner-title" aria-describedby="privacy-banner-copy" hidden>
+  <div class="privacy-banner-copy"><strong id="privacy-banner-title">Помочь нам улучшать сайт?</strong><p id="privacy-banner-copy">По желанию можно включить статистику посещений Umami. Она использует сведения о браузере и сетевом соединении для подсчёта посещений. Без согласия статистика не загружается. <a href="privacy.html">Подробнее о данных</a>.</p></div>
+  <div class="privacy-banner-actions"><button class="privacy-accept" id="privacy-accept" type="button">Разрешить статистику</button><button class="privacy-decline" id="privacy-decline" type="button">Продолжить без неё</button></div>
+</aside>
+<footer class="footer wrap"><div><a href="#top" aria-label="В начало"><img src="wordmark.svg" width="166" height="40" alt="Unseen"></a><p>Пусть близкие будут ближе.</p></div><nav class="footer-links" aria-label="Информация"><a href="privacy.html">Данные и конфиденциальность</a><button id="privacy-settings" type="button">Настройки статистики</button><a href="https://github.com/unseen-app/unseen-app.github.io" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a></nav></footer>
 </body>
 </html>
