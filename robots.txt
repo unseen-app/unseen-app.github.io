@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://unseen-app.github.io/sitemap.xml
