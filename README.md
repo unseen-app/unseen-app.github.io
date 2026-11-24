@@ -5,7 +5,11 @@
 
 Публикация GitHub Pages: Settings → Pages → Deploy from a branch → main → /(root).
 Файлы приложений размещены в GitHub Releases. На странице ссылки на выпуск
-`downloads-2026-11-01`: Windows 3.6.9, Android 0.90, TV 0.1.3.
+`downloads-2026-11-01`: Windows 3.6.9. Android 0.91 и Android TV 0.1.4
+отдаются этим же сайтом (`Unseen-0.91-91.apk`, `Unseen-TV-0.1.4.apk`).
+
+Каналы обновлений: `updates/unseen/latest.json` (телефон) и `latest-tv.json`
+(телевизор); APK лежат рядом с манифестами. Ссылки на странице ведут на них же.
 
 Android TV — совсем ранняя версия, сейчас ориентированная на YouTube.
 Приложения находятся в бета-тестировании. Работа зависит от сети.
